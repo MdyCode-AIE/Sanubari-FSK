@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SANUBARI WaRiSAN™️</title>
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/en/thumb/4/4f/Coat_of_Arms_of_Universiti_Kebangsaan_Malaysia.png/150px-Coat_of_Arms_of_Universiti_Kebangsaan_Malaysia.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Global & Scrollbar --- */
+        :root {
+            --primary-blue: #1e3a8a;
+            --deep-blue: #0f172a;
+            --gold: #ca8a04;
+            --gold-hover: #a16207;
+        }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-blue); }
+
+        /* --- Chat Bubbles --- */
+        .message-bubble {
+            max-width: 85%;
+            border-radius: 20px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+            position: relative;
+            word-break: break-word;
+            animation: fadeIn 0.4s ease-out;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+            color: #ffffff;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+            color: #ffffff;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* --- Formatting inside bubbles --- */
+        .message-bubble ul { margin: 8px 0; padding-left: 20px; list-style-type: disc; }
+        .message-bubble li { margin-bottom: 4px; }
+        .message-bubble strong { color: inherit; font-weight: 700; }
+
+        /* --- Option Chips --- */
+        .options-container {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+            margin-left: 5px; animation: fadeIn 0.5s ease-out; width: 100%;
+        }
+
+        .option-chip {
+            background-color: #fff;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .option-chip:hover {
+            background-color: var(--gold);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(202, 138, 4, 0.3);
+        }
+
+        /* --- Copy Button --- */
+        .copy-btn {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border: none; border-radius: 6px;
+            cursor: pointer; padding: 4px; display: none;
+            transition: all 0.2s; align-items: center; justify-content: center;
+        }
+        .message-bubble.bot-message:hover .copy-btn { display: flex; }
+        .copy-btn:hover { background: rgba(0, 0, 0, 0.1); }
+        .copy-btn svg { width: 14px; height: 14px; fill: #64748b; }
+
+        /* --- Typing Indicator --- */
+        .typing-indicator {
+            display: inline-flex; gap: 4px; align-items: center;
+            padding: 8px 12px; margin-top: 4px;
+            background: white; border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .typing-indicator span {
+            height: 6px; width: 6px; background-color: var(--primary-blue);
+            border-radius: 50%; display: inline-block;
+            animation: bounce 1.1s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+            30% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* --- Sidebar & Layout --- */
+        .sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 4px 0 10px rgba(0,0,0,0.1); z-index: 20; }
+        .sidebar-collapsed { width: 70px !important; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .logo-text, .sidebar-collapsed .logo-full { display: none; }
+        .sidebar-collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar-collapsed .dropdown-toggle { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar-collapsed .dropdown-arrow { display: none; }
+
+        /* --- Dropdowns --- */
+        .dropdown-content {
+            display: none; overflow: hidden; transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1); border-radius: 8px;
+        }
+        .dropdown-content.show { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Popups --- */
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .popup-overlay.active { opacity: 1; visibility: visible; }
+        .popup-content {
+            background: white; border-radius: 20px; width: 90%; max-width: 480px;
+            transform: scale(0.95); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .popup-overlay.active .popup-content { transform: scale(1); }
+
+        /* Start Popup Specifics */
+        .popup_start_bg {
+            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.9)), url('https://64.media.tumblr.com/55119295433358ef2fa700a426b91bba/8a1dd4d6a08be0ff-3f/s400x600/a6362bd52cd44fd82c9249b8b0b3416694282c89.gif');
+            background-size: cover; background-position: center;
+        }
+
+        /* --- Video & Avatar --- */
+        #avatar-container {
+            position: relative;
+            background-color: #fff;
+            overflow: hidden;
+            box-shadow: none;
+
+            isolation: isolate;
+        }
+        .videoPlayer {
+            pointer-events: none;
+            /* Changed to 'cover' to make video fill the entire container height/width */
+            object-fit: cover;
+            object-position: center;
+            position: absolute;
+            top: 0; left:0; width: 100%; height: 100%;
+            opacity: 0;
+            z-index: 1;
+            transition: opacity 0.1s ease-in-out;
+        }
+        .videoPlayer.active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        /* --- Gradient Text Animation --- */
+        .animate-text-gradient {
+            background: linear-gradient(to right, #ffffff, #93c5fd, #ffffff);
+            background-size: 200% auto;
+            color: #000;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textFlow 3s linear infinite;
+        }
+        @keyframes textFlow { to { background-position: 200% center; } }
+    </style>
+</head>
+
+<body class="font-['Plus_Jakarta_Sans'] bg-slate-50 text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <div id="sidebar" class="sidebar text-white w-72 flex flex-col h-full bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] shrink-0">
+            <div class="p-5 flex items-center justify-between border-b border-white/10">
+                <div class="logo-full flex justify-center w-full">
+                    <img src="https://www.warisan.ukm.my/logo-no-background.png" alt="logo" class="h-20 w-auto object-contain">
+                </div>
+                <button id="toggleSidebar" class="p-1 rounded hover:bg-white/10 transition">
+                    <i data-feather="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto py-6">
+                <nav class="px-3 space-y-2">
+                    <a href="#" class="nav-item flex items-center p-3 rounded-xl hover:bg-white/10 hover:text-[#fbbf24] transition-all group" id="popupTrigger_domain">
+                        <i data-feather="database" class="group-hover:scale-110 transition-transform"></i>
+                        <span class="nav-text ml-3 font-medium">Domain Kesihatan</span>
+                    </a>
+
+                    <a href="#" class="nav-item flex items-center p-3 rounded-xl hover:bg-white/10 hover:text-[#fbbf24] transition-all group" id="popupTrigger_cara">
+                        <i data-feather="settings" class="group-hover:scale-110 transition-transform"></i>
+                        <span class="nav-text ml-3 font-medium">Cara Pengunaan</span>
+                    </a>
+
+                    <a href="#" class="nav-item flex items-center p-3 rounded-xl hover:bg-white/10 hover:text-[#fbbf24] transition-all group" id="clear">
+                        <i data-feather="refresh-ccw" class="group-hover:rotate-180 transition-transform duration-500"></i>
+                        <span class="nav-text ml-3 font-medium">Hilangkan Sejarah</span>
+                    </a>
+
+                    <div class="relative dropdown mt-6">
+                        <button class="dropdown-toggle w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/10 transition-all text-white">
+                            <div class="flex items-center">
+                                <i data-feather="list"></i>
+                                <span class="nav-text ml-3 font-medium" id="dropdown-label-text">Bidang Kesihatan</span>
+                            </div>
+                            <i data-feather="chevron-down" class="nav-text dropdown-arrow transition-transform duration-300"></i>
+                        </button>
+                        <div class="dropdown-content mt-2 ml-1">
+                            <div class="py-1" id="mainList">
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Diet Khusus</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Penyakit Tidak Berjangkit</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Penyakit Berjangkit</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Garis Panduan Pemakanan</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Farmakologi & Toksikologi</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Entomologi & Parasitologi</a>
+                              <a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-200 hover:text-[#fbbf24] hover:bg-white/5 transition">Proses Biokimia</a>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-white/10 text-center text-xs text-white/40 nav-text">
+                &copy; 2025 Projek WaRiSAN
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col relative bg-slate-50 overflow-hidden">
+
+            <div class="bg-gradient-to-r from-[#1e3a8a] to-[#0f172a] text-white shadow-lg z-10 shrink-0">
+                <div class="flex items-center justify-between px-6 py-3">
+                    <div class="flex items-center">
+                        <img src=".//logo-sideways_v2.png" alt="logo" class="h-20 w-auto object-contain">
+                    </div>
+
+                    <div class="hidden md:flex items-center gap-6">
+                        <img src="https://www.ukm.my/omfs/images/ukm%20logo%20putih.png" class="h-14 w-auto opacity-90 hover:opacity-100 transition">
+                        <div class="w-px h-8 bg-white/20"></div>
+                        <img src="https://ftsm.ukm.my/v6/public/assets/img/logo/ftsm-white.png" class="h-14 w-auto opacity-90 hover:opacity-100 transition">
+                        <div class="w-px h-8 bg-white/20"></div>
+                        <img src="https://ftsm.ukm.my/v6/public/assets/img/logo/cait-white.png" class="h-14 w-auto opacity-90 hover:opacity-100 transition">
+                        <div class="w-px h-8 bg-white/20"></div>
+                        <img src="https://www.ukm.my/fsk/wp-content/uploads/2022/04/Logo-FSK-dark-Bg-1024x934-2.png" class="h-14 w-auto opacity-90 hover:opacity-100 transition">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative min-h-0 bg-[#FFFFFF]">
+
+                <div id="avatar-container" class="w-full md:w-1/4 h-64 md:h-full bg-white flex items-center justify-center relative ">
+                    <video id="v1" class="videoPlayer active" muted playsinline tabindex="-1"></video>
+                    <video id="v2" class="videoPlayer" muted playsinline tabindex="-1"></video>
+                    <video id="v3" class="videoPlayer" muted playsinline tabindex="-1"></video>
+                    <video id="v4" class="videoPlayer" muted playsinline tabindex="-1"></video>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" id="chat-scroll-area">
+                    <div id="messages" class="flex flex-col space-y-4 w-full">
+                        <div id="typing" class="typing-indicator hidden shadow-sm" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shrink-0 p-3 chat-box w-full backdrop-blur-md shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] animate-gradient bg-[linear-gradient(90deg,#203864,#203864,#203864)] border border-[#4A70A9] z-20">
+                <div class="flex items-center w-full">
+                    <div class="flex-1 relative">
+                        <input type="text" id="message-input" placeholder="Sila tulis mesej anda........." class="w-full py-3 px-5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:border-transparent">
+                    </div>
+                    <button id="send-button" class="ml-3 p-3 rounded-full bg-[#ca8a04] text-white hover:bg-[#ca8a04] flex-shrink-0">
+                        <i data-feather="send"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-white mt-2 text-center">Jawapan AI berdasarkan data yang diperoleh daripada FTSM-FSK.</p>
+            </div>
+
+        </div> <div id="popup-start" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-700 popup_start_bg">
+            <div class="bg-white/90 backdrop-blur-xl p-1 rounded-3xl shadow-2xl transform scale-95 transition-transform duration-500 hover:scale-100">
+                <div class="bg-gradient-to-br from-white to-slate-100 rounded-[20px] p-10 text-center max-w-lg border border-/50">
+                    <div class="mb-6 flex justify-center">
+                         <img src=".//logo_black.png" alt="logo" class="h-20 w-auto">
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-800 mb-2">Selamat Datang</h1>
+                    <p class="text-slate-500 mb-8">Platform AI Kesihatan Digital WaRiSAN</p>
+                    <button onclick="closePopup()" class="w-full py-4 px-8 bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-blue-600/40 hover:-translate-y-1 transition-all">
+                        Mula Berbual
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="popup" class="popup-overlay">
+            <div class="popup-content p-6 relative">
+                <button id="popupClose" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i data-feather="x"></i></button>
+                <div class="text-center pt-2">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                        <i data-feather="database"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Domain Kesihatan</h2>
+                    <p class="text-slate-500 leading-relaxed">Maklumat data diperolehi daripada Fakulti Sains Kesihatan (FSK) melalui 2 domain utama iaitu Sains Bioperubatan dan Pemakanan & Dietetik.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="popup_2" class="popup-overlay">
+            <div class="popup-content p-6 relative">
+                <button id="popupClose_2" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i data-feather="x"></i></button>
+                <div class="text-center pt-2">
+                    <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600">
+                        <i data-feather="help-circle"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">Cara Penggunaan</h2>
+                    <p class="text-slate-500 leading-relaxed">Pilih topik dari menu atau taip soalan anda secara terus di ruang chat di bawah.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Initialize Icons & Animations
+        feather.replace();
+        AOS.init();
+
+        const messagesEl = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing');
+        const scrollArea = document.getElementById('chat-scroll-area');
+
+        // --- CHAT HISTORY STATE & DATA ---
+        let chatHistory = [];
+        const DEFAULT_OPTIONS = [""];
+
+        // Data map for categories and their specific chips
+        const CATEGORY_DATA = {
+            "Diet Khusus": ["Definisi Vegan", "Kesan sampingan bagi diet rendah garam", "Maksud diet ketogenik", "Contoh makanan untuk diet lacto-ovo vegetarian"],
+            "Garis Panduan Pemakanan": ["Panduan Diet Malaysia (Malaysian Dietary Guidelines) 2020", "Mesej utama (key message) 1 yang terkandung dalam Panduan Diet Malaysia ", "umpulan sasaran bagi pelaksanaan Panduan Diet Malaysia (Malaysian Dietary Guidelines) 2020"],
+            "Penyakit Tidak Berjangkit": ["Definisi tekanan darah tinggi (hipertensi)", "Tanda-tanda bagi angin ahmar (strok)", "Petanda bagi kegagalan jantung", "Rawatan bagi aterosklerosis"],
+            "Penyakit Berjangkit": ["Simptom COVID-19", "Maksud influenza", "Punca bagi Chikungunya", "Pengesanan klinikal bagi Zika"],
+            "Farmakologi & Toksikologi": ["Tujuan perubatan ibuprofen?", "Dos ibuprofen bagi kanak-kanak", "Kaedah penyimpanan ubat ibuprofen", "Kesan buruk bagi ubat ibuprofen"],
+            "Entomologi & Parasitologi": ["Spesies Acanthamoeba spp.", "penyakit bagi Acanthamoeba spp.","Proses hidup Aedes aegypti", "Lokasi bagi Aedes aegypti"],
+            "Proses Biokimia": ["Tujuan pencernaan", "Contoh protein kompleks", "Definisi kim (chyme)", "Lokasi fisiologi khas bagi proses pencernaan"]
+
+        };
+
+        // Scroll Helper
+        function scrollToBottom() {
+            scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+        }
+
+        // Add User Message
+        function addUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble user-message';
+            messageDiv.innerHTML = formatTextToHTML(text);
+            messagesEl.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        // Add Bot Message (Typewriter Effect)
+        async function typeBotMessage(text, options = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble bot-message';
+            messagesEl.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+
+            // Type Text
+            const lines = text.split('\n');
+            let currentUl = null;
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                if (line.startsWith('- ') || line.startsWith('* ')) {
+                    if (!currentUl) { currentUl = document.createElement('ul'); messageDiv.appendChild(currentUl); }
+                    const li = document.createElement('li'); currentUl.appendChild(li);
+                    await typeTextEffect(li, line.substring(2));
+                } else {
+                    currentUl = null;
+                    const div = document.createElement('div'); messageDiv.appendChild(div);
+                    await typeTextEffect(div, line);
+                }
+            }
+
+            addCopyButton(messageDiv, text);
+
+            // Render Options
+            const optsToRender = (options && options.length > 0) ? options : DEFAULT_OPTIONS;
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options-container';
+
+            optsToRender.forEach(optText => {
+                const btn = document.createElement('button');
+                btn.className = 'option-chip';
+                btn.textContent = optText;
+                btn.onclick = () => handleOptionClick(optText);
+                optionsDiv.appendChild(btn);
+            });
+
+            messagesEl.insertBefore(optionsDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        function handleOptionClick(text) {
+            messageInput.value = text;
+            handleSend();
+        }
+
+        function typeTextEffect(element, text) {
+            return new Promise(resolve => {
+                let i = 0;
+                function typeChar() {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i); i++;
+                        scrollToBottom(); setTimeout(typeChar, 8); // Slightly faster typing
+                    } else { resolve(); }
+                }
+                typeChar();
+            });
+        }
+
+        function addCopyButton(parentDiv, textToCopy) {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.innerHTML = `<i data-feather="copy"></i>`;
+            parentDiv.appendChild(btn);
+            feather.replace(); // Re-render icon
+
+            btn.onclick = () => {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    btn.innerHTML = `<i data-feather="check" style="color: green;"></i>`;
+                    feather.replace();
+                    setTimeout(() => {
+                        btn.innerHTML = `<i data-feather="copy"></i>`;
+                        feather.replace();
+                    }, 2000);
+                });
+            };
+        }
+
+        function formatTextToHTML(text) {
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        }
+
+        // --- SEND LOGIC ---
+        async function handleSend() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addUserMessage(message);
+            chatHistory.push({ role: "user", content: message });
+
+            messageInput.value = '';
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+
+            try {
+                // NOTE: Replace with your actual Endpoint
+                const res = await fetch("https://tabular-denver-actually.ngrok-free.dev/llm/", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message, history: chatHistory })
+                });
+                const data = await res.json();
+                const botReply = data.reply || "Maaf, perkhidmatan sedang mengalami gangguan.";
+
+                chatHistory.push({ role: "assistant", content: botReply });
+
+                let dtop=data.options
+                // Video Logic
+                const keywords = ["sanubari","waalaikumsalam","hello"];
+                if (botReply.includes("Ralat") || botReply.includes("maaf")) {
+                  playNoVideo();
+                  dtop=DEFAULT_OPTIONS
+                }
+                else if (keywords.some(w => botReply.toLowerCase().includes(w))) {
+                  playHiVideo();
+                  dtop=DEFAULT_OPTIONS
+                }
+                else { playMovingVideo(); }
+
+                typingIndicator.classList.add('hidden');
+                await typeBotMessage(botReply, dtop);
+
+            } catch (err) {
+                console.error("Error:", err);
+                typingIndicator.classList.add('hidden');
+                playNoVideo();
+                await typeBotMessage("Maaf, pelayan tidak dapat dihubungi buat masa ini.", DEFAULT_OPTIONS);
+            }
+        }
+
+        sendButton.addEventListener('click', handleSend);
+        messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } });
+
+        // --- SIDEBAR & POPUPS ---
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            sidebar.classList.toggle('sidebar-collapsed');
+        });
+
+        document.getElementById('clear').addEventListener('click', (e) => {
+            e.preventDefault();
+            messagesEl.innerHTML = '';
+            messagesEl.appendChild(typingIndicator); // Keep indicator
+            chatHistory = [];
+            // Optional: Reset to welcome message
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.className = 'message-bubble bot-message shadow-sm';
+            welcomeDiv.innerText = 'Sejarah perbualan telah dipadam. Boleh saya bantu lagi?';
+            messagesEl.insertBefore(welcomeDiv, typingIndicator);
+        });
+
+        // Popup Handlers
+        const setupPopup = (triggerId, popupId, closeId) => {
+            const popup = document.getElementById(popupId);
+            const trigger = document.getElementById(triggerId);
+            const close = document.getElementById(closeId);
+            if(trigger && popup && close) {
+                trigger.addEventListener('click', (e) => { e.preventDefault(); popup.classList.add('active'); });
+                close.addEventListener('click', () => popup.classList.remove('active'));
+                popup.addEventListener('click', (e) => { if (e.target === popup) popup.classList.remove('active'); });
+            }
+        }
+        setupPopup('popupTrigger_domain', 'popup', 'popupClose');
+        setupPopup('popupTrigger_cara', 'popup_2', 'popupClose_2');
+
+        // Start Popup
+        const popup_start = document.getElementById('popup-start');
+        window.addEventListener('load', () => setTimeout(() => {
+            popup_start.classList.remove('opacity-0', 'pointer-events-none');
+            popup_start.classList.add('opacity-100');
+        }, 100));
+
+        function closePopup() {
+            popup_start.classList.remove('opacity-100');
+            popup_start.classList.add('opacity-0', 'pointer-events-none');
+            idlePlayer.play().catch(e => console.log("Auto-play prevented"));
+        }
+
+        // --- VIDEO PLAYER LOGIC ---
+        // --- IMPROVED VIDEO PLAYER LOGIC ---
+        const idlePlayer = document.getElementById('v1');
+        const movingPlayer = document.getElementById('v2');
+        const noPlayer = document.getElementById('v3');
+        const hiPlayer = document.getElementById('v4');
+
+        // Setup Sources
+        idlePlayer.src = './/idle_color_white.mp4'; idlePlayer.loop = true;
+        movingPlayer.src = './/moving_color_white.mp4';
+        noPlayer.src = './/no_v3.mp4';
+        hiPlayer.src = './/hi_color_white.mp4';
+
+        function switchVideo(target) {
+            // 1. Identify currently playing video
+            const currentVideo = document.querySelector('.videoPlayer.active');
+
+            // If the target is already playing, do nothing to prevent glitches
+            if (currentVideo === target) return;
+
+            // 2. Prepare the new video (Reset to start)
+            target.currentTime = 0;
+
+            // 3. Play the new video *before* showing it
+            // This ensures the first frame is ready so we don't see black
+            target.play().then(() => {
+
+                // 4. Fade in the new video (CSS handles opacity & z-index)
+                target.classList.add('active');
+
+                // 5. Wait for the transition to finish (500ms), THEN hide the old video
+                // This creates a smooth cross-fade overlap
+                setTimeout(() => {
+                    if (currentVideo && currentVideo !== target) {
+                        currentVideo.classList.remove('active');
+                        currentVideo.pause();
+                    }
+                }, 100); // This 500 matches the CSS transition: 0.5s
+
+            }).catch(e => console.error("Video play error:", e));
+        }
+
+        function playMovingVideo() { switchVideo(movingPlayer); }
+        function playNoVideo() { switchVideo(noPlayer); }
+        function playHiVideo() { switchVideo(hiPlayer); }
+        function returnToIdle() { switchVideo(idlePlayer); }
+
+        // When a video ends, automatically go back to idle
+        [movingPlayer, noPlayer, hiPlayer].forEach(p => {
+            p.addEventListener('ended', returnToIdle);
+        });
+
+        // --- DROPDOWNS ---
+        function closeAllDropdowns() {
+            document.querySelectorAll('.dropdown-content').forEach(dc => dc.classList.remove('show'));
+            document.querySelectorAll('.dropdown-arrow').forEach(ar => ar.style.transform = 'rotate(0deg)');
+        }
+
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            const toggleBtn = dropdown.querySelector('.dropdown-toggle');
+            const content = dropdown.querySelector('.dropdown-content');
+            const arrow = dropdown.querySelector('.dropdown-arrow');
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = content.classList.contains('show');
+                    closeAllDropdowns();
+                    if (!isOpen) {
+                        content.classList.add('show');
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    }
+                });
+            }
+
+            const items = dropdown.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                // Modified Event Listener for Dropdown Selection
+                item.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const selectedText = item.innerText.trim();
+
+                    // Update label
+                    const labelSpan = dropdown.querySelector('.dropdown-toggle .nav-text');
+                    if(labelSpan) labelSpan.textContent = selectedText;
+
+                    closeAllDropdowns();
+
+                    // Trigger Bot Response: Ask "What is your question?" with specific chips
+                    typingIndicator.classList.remove('hidden');
+                    scrollToBottom();
+
+                    // Fake small delay for natural feeling
+                    await new Promise(r => setTimeout(r, 600));
+
+                    typingIndicator.classList.add('hidden');
+                    const botPrompt = `Anda telah memilih topik ${selectedText}. \nApa persoalan anda mengenai topik ini?`;
+                    const specificOptions = CATEGORY_DATA[selectedText] || DEFAULT_OPTIONS;
+
+                    // Play sound or animation if needed here
+                    playMovingVideo(); // Optional: Make the avatar move slightly
+
+                    await typeBotMessage(botPrompt, specificOptions);
+                });
+            });
+        });
+
+        document.addEventListener('click', () => closeAllDropdowns());
+    </script>
+</body>
+</html>
